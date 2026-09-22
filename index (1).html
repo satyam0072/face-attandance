@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FaceAttend – Student Attendance</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2A4FD6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FaceAttend">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF1F6; --panel:#FFFFFF; --ink:#14213D; --muted:#5D6B85; --line:#D6DCE8;
+    --brand:#2A4FD6; --brand-ink:#FFFFFF; --ok:#0E8F63; --warn:#B9770E; --bad:#C0392B;
+    --soft:#E4EAFB;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0E1424; --panel:#172038; --ink:#E8EDF9; --muted:#93A0BD; --line:#2A3555;
+      --brand:#6C8CFF; --brand-ink:#0E1424; --ok:#3DD6A0; --warn:#F0B54A; --bad:#FF7B6B; --soft:#1F2C55; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px 28px;background:var(--panel);border-bottom:1px solid var(--line)}
+  .logo{font-weight:800;font-size:22px;letter-spacing:-.02em}
+  .logo span{color:var(--brand)}
+  nav{display:flex;gap:6px;flex-wrap:wrap}
+  nav button{background:none;border:0;padding:9px 16px;border-radius:999px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}
+  nav button.active{background:var(--soft);color:var(--brand)}
+  nav button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+  main{max-width:1100px;margin:0 auto;padding:24px 20px 60px}
+  h2{font-size:26px;letter-spacing:-.02em;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 20px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+  label{display:block;font-weight:600;font-size:14px;margin:12px 0 4px}
+  input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--bg);color:var(--ink)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border:0;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;background:var(--brand);color:var(--brand-ink)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn.danger{background:transparent;color:var(--bad);border:1px solid var(--line);padding:6px 12px;font-size:13px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .cam{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3}
+  .cam video,.cam canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .cam .off{position:absolute;inset:0;display:grid;place-items:center;color:#9aa6c2;font-weight:600;text-align:center;padding:20px}
+  .status{padding:10px 14px;border-radius:10px;background:var(--soft);font-weight:600;font-size:14px;margin-bottom:16px}
+  .status.err{background:#fde7e4;color:#8a2417}
+  .samples{display:flex;gap:8px;margin-top:12px}
+  .dot{width:34px;height:34px;border-radius:50%;border:2px dashed var(--line);display:grid;place-items:center;font-size:13px;color:var(--muted);font-weight:700}
+  .dot.on{border:2px solid var(--ok);background:var(--ok);color:#fff}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}
+  th{font-size:13px;color:var(--muted);font-weight:700}
+  .tablewrap{overflow-x:auto}
+  .tag{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;background:var(--soft);color:var(--brand)}
+  .tag.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+  .tag.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:16px}
+  .seg button{border:0;background:none;padding:9px 18px;font:inherit;font-weight:700;color:var(--muted);cursor:pointer}
+  .seg button.active{background:var(--brand);color:var(--brand-ink)}
+  .log{list-style:none;margin:12px 0 0;padding:0;max-height:260px;overflow:auto}
+  .log li{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px}
+  .empty{color:var(--muted);padding:18px 0}
+  .fp{display:grid;place-items:center;text-align:center;padding:36px 10px}
+  .fp svg{width:96px;height:96px;color:var(--brand);margin-bottom:12px}
+  #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:12px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;max-width:90vw;z-index:9}
+  #toast.show{opacity:1;transform:translateX(-50%)}
+  .hidden{display:none!important}
+  .stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 18px;min-width:120px}
+  .stat b{display:block;font-size:26px;letter-spacing:-.02em}
+  .stat span{color:var(--muted);font-size:13px;font-weight:600}
+  @media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Face<span>Attend</span></div>
+  <nav id="nav">
+    <button data-tab="attend" class="active">Take attendance</button>
+    <button data-tab="enroll">Enroll student</button>
+    <button data-tab="students">Students</button>
+    <button data-tab="records">Records</button>
+  </nav>
+</header>
+
+<main>
+  <div id="modelStatus" class="status">Loading face recognition models…</div>
+
+  <!-- ATTENDANCE -->
+  <section id="tab-attend">
+    <h2>Take attendance</h2>
+    <p class="sub">Students look at the camera, or use the device fingerprint sensor.</p>
+    <div class="seg" id="modeSeg">
+      <button data-mode="face" class="active">Face</button>
+      <button data-mode="finger">Fingerprint</button>
+    </div>
+    <div class="grid">
+      <div class="panel">
+        <div id="faceBox">
+          <div class="cam">
+            <video id="vidA" autoplay muted playsinline></video>
+            <canvas id="ovA"></canvas>
+            <div class="off" id="offA">Camera is off</div>
+          </div>
+          <div class="row">
+            <button class="btn" id="startScan">Start camera</button>
+            <button class="btn ghost hidden" id="stopScan">Stop</button>
+          </div>
+        </div>
+        <div id="fingerBox" class="hidden">
+          <div class="fp">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0 3-.5 5.5-1.5 8"/><path d="M8 19c1-2 1.5-4.500 1.500-8a2.500 2.500 0 0 1 5 0c0 2-.2 4-.8 6"/><path d="M5 15.500c.7-1.400 1-2.800 1-4.500a6 6 0 0 1 12 0c0 1.500-.1 3-.5 4.500"/><path d="M17.500 19c.5-1 .8-2 1-3"/><path d="M3.500 10a8.500 8.500 0 0 1 17 0"/></svg>
+            <p style="margin:0 0 14px;font-weight:600">Place your finger on the sensor when asked</p>
+            <button class="btn" id="fpScan">Scan fingerprint</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3 style="margin:0">Marked today</h3>
+        <ul class="log" id="todayLog"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ENROLL -->
+  <section id="tab-enroll" class="hidden">
+    <h2>Enroll a student</h2>
+    <p class="sub">Fill the details, capture 5 face photos, and optionally add a fingerprint.</p>
+    <div class="grid">
+      <div class="panel">
+        <label for="fName">Full name</label>
+        <input id="fName" placeholder="e.g. Aman Kumar">
+        <label for="fRoll">Roll number / ID</label>
+        <input id="fRoll" placeholder="e.g. 23">
+        <label for="fClass">Class</label>
+        <input id="fClass" placeholder="e.g. 10-A">
+        <div class="samples" id="samples"></div>
+        <div class="row">
+          <button class="btn ghost" id="regFinger">Add fingerprint</button>
+          <span id="fpState" class="tag" style="align-self:center">No fingerprint</span>
+        </div>
+        <div class="row">
+          <button class="btn" id="saveStudent" disabled>Save student</button>
+          <button class="btn ghost" id="resetEnroll">Clear</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="cam">
+          <video id="vidE" autoplay muted playsinline></video>
+          <canvas id="ovE"></canvas>
+          <div class="off" id="offE">Camera is off</div>
+        </div>
+        <div class="row">
+          <button class="btn" id="startEnroll">Start camera</button>
+          <button class="btn" id="capture" disabled>Capture face</button>
+        </div>
+        <p class="sub" style="margin:12px 0 0">Tip: good light, and turn the head slightly between captures.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STUDENTS -->
+  <section id="tab-students" class="hidden">
+    <h2>Students</h2>
+    <p class="sub">Everyone enrolled on this device.</p>
+    <div class="panel tablewrap" id="studentList"></div>
+  </section>
+
+  <!-- RECORDS -->
+  <section id="tab-records" class="hidden">
+    <h2>Records</h2>
+    <p class="sub">Choose a date to see who was present and absent.</p>
+    <div class="row" style="margin:0 0 16px;align-items:end">
+      <div><label for="recDate" style="margin-top:0">Date</label><input type="date" id="recDate"></div>
+      <div><label for="recClass" style="margin-top:0">Class</label><select id="recClass"><option value="">All classes</option></select></div>
+      <button class="btn" id="exportCsv">Download CSV</button>
+    </div>
+    <div class="stats" id="recStats"></div>
+    <div class="panel tablewrap" id="recTable"></div>
+  </section>
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.js"></script>
+<script>
+"use strict";
+const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model/";
+const MATCH_THRESHOLD = 0.5;   // lower = stricter
+const SAMPLES_NEEDED = 5;
+const STREAK_NEEDED = 3;       // consecutive frames before marking
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayStr = () => { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+
+/* ---------- storage ---------- */
+let students = [], records = [];
+function load(){
+  try{ students = JSON.parse(localStorage.getItem("fa_students")||"[]"); }catch(e){ students=[]; }
+  try{ records  = JSON.parse(localStorage.getItem("fa_records")||"[]"); }catch(e){ records=[]; }
+}
+function save(){
+  try{
+    localStorage.setItem("fa_students", JSON.stringify(students));
+    localStorage.setItem("fa_records", JSON.stringify(records));
+  }catch(e){ toast("Could not save data: "+e.message); }
+}
+load();
+
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove("show"), 2800);
+}
+
+/* ---------- models ---------- */
+let modelsReady = false;
+async function loadModels(){
+  try{
+    if(!window.faceapi) throw new Error("face-api.js did not load. Check internet connection.");
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    modelsReady = true;
+    $("modelStatus").textContent = "Face recognition is ready.";
+    setTimeout(()=>$("modelStatus").classList.add("hidden"), 2500);
+  }catch(e){
+    $("modelStatus").classList.add("err");
+    $("modelStatus").textContent = "Could not load face models: " + e.message + " Fingerprint mode still works.";
+  }
+}
+const detOpts = () => new faceapi.TinyFaceDetectorOptions({inputSize:320, scoreThreshold:0.5});
+
+/* ---------- camera ---------- */
+async function startCam(video, off){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user", width:640, height:480}, audio:false});
+    video.srcObject = stream; await video.play();
+    off.classList.add("hidden");
+    return stream;
+  }catch(e){
+    toast("Camera error: " + e.message);
+    return null;
+  }
+}
+function stopCam(video, off, stream){
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  video.srcObject = null; off.classList.remove("hidden");
+}
+function drawBoxes(canvas, video, items){
+  const w = video.videoWidth, h = video.videoHeight;
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d"); ctx.clearRect(0,0,w,h);
+  ctx.lineWidth = 3; ctx.font = "bold 20px sans-serif";
+  items.forEach(({box,label,color})=>{
+    ctx.strokeStyle = color; ctx.strokeRect(box.x, box.y, box.width, box.height);
+    if(label){
+      const tw = ctx.measureText(label).width + 12;
+      ctx.fillStyle = color; ctx.fillRect(box.x, box.y-28, tw, 28);
+      ctx.fillStyle = "#fff"; ctx.fillText(label, box.x+6, box.y-7);
+    }
+  });
+}
+
+/* ---------- tabs ---------- */
+let currentTab = "attend";
+$("nav").addEventListener("click", e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  showTab(b.dataset.tab);
+});
+function showTab(tab){
+  currentTab = tab;
+  document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("active", x.dataset.tab===tab));
+  ["attend","enroll","students","records"].forEach(t=>$("tab-"+t).classList.toggle("hidden", t!==tab));
+  if(tab!=="attend") stopScan();
+  if(tab!=="enroll") stopEnrollCam();
+  if(tab==="students") renderStudents();
+  if(tab==="records") renderRecords();
+  if(tab==="attend") renderToday();
+}
+
+/* ---------- enroll ---------- */
+let enrollStream = null, enrollDescs = [], enrollCred = null, enrollLoop = null;
+function renderSamples(){
+  $("samples").innerHTML = Array.from({length:SAMPLES_NEEDED},(_,i)=>`<div class="dot ${i<enrollDescs.length?'on':''}">${i<enrollDescs.length?'✓':i+1}</div>`).join("");
+  refreshSaveBtn();
+}
+function refreshSaveBtn(){
+  const ok = $("fName").value.trim() && $("fRoll").value.trim() && (enrollDescs.length>=SAMPLES_NEEDED || (enrollCred && enrollDescs.length===0));
+  $("saveStudent").disabled = !ok;
+}
+["fName","fRoll","fClass"].forEach(id=>$(id).addEventListener("input", refreshSaveBtn));
+renderSamples();
+
+async function enrollOverlay(){
+  const v = $("vidE"); if(!enrollStream) return;
+  try{
+    const d = await faceapi.detectAllFaces(v, detOpts());
+    drawBoxes($("ovE"), v, d.map(x=>({box:x.box, label:"", color:"#2A4FD6"})));
+  }catch(e){}
+  enrollLoop = setTimeout(enrollOverlay, 250);
+}
+$("startEnroll").addEventListener("click", async ()=>{
+  if(!modelsReady){ toast("Face models not loaded yet."); return; }
+  if(enrollStream) return;
+  enrollStream = await startCam($("vidE"), $("offE"));
+  if(enrollStream){ $("capture").disabled = false; enrollOverlay(); }
+});
+function stopEnrollCam(){
+  clearTimeout(enrollLoop);
+  if(enrollStream){ stopCam($("vidE"), $("offE"), enrollStream); enrollStream=null; }
+  $("capture").disabled = true;
+}
+$("capture").addEventListener("click", async ()=>{
+  if(enrollDescs.length>=SAMPLES_NEEDED){ toast("Already have "+SAMPLES_NEEDED+" captures."); return; }
+  const res = await faceapi.detectAllFaces($("vidE"), detOpts()).withFaceLandmarks().withFaceDescriptors();
+  if(res.length===0){ toast("No face found. Look at the camera."); return; }
+  if(res.length>1){ toast("More than one face. Only the student should be in view."); return; }
+  // reject if this face already belongs to another enrolled student
+  const d = res[0].descriptor;
+  const dup = findMatch(d);
+  if(dup){ toast("This face already enrolled as "+dup.student.name+"."); return; }
+  enrollDescs.push(Array.from(d));
+  renderSamples();
+  toast("Captured "+enrollDescs.length+" of "+SAMPLES_NEEDED);
+});
+
+/* ---------- WebAuthn (fingerprint via device sensor) ---------- */
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const unb64 = s => { s=s.replace(/-/g,"+").replace(/_/g,"/"); while(s.length%4) s+="="; return Uint8Array.from(atob(s), c=>c.charCodeAt(0)); };
+
+function fpSupported(){
+  if(!window.PublicKeyCredential || !navigator.credentials){ toast("Fingerprint is not supported in this browser."); return false; }
+  if(!window.isSecureContext){ toast("Fingerprint needs https:// or http://localhost. Open the app from a local server."); return false; }
+  return true;
+}
+$("regFinger").addEventListener("click", async ()=>{
+  const name = $("fName").value.trim(), roll = $("fRoll").value.trim();
+  if(!name || !roll){ toast("Enter name and roll number first."); return; }
+  if(!fpSupported()) return;
+  try{
+    const cred = await navigator.credentials.create({publicKey:{
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp:{ name:"FaceAttend" },
+      user:{ id: new TextEncoder().encode("stu-"+roll+"-"+Date.now()), name: roll, displayName: name },
+      pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],
+      authenticatorSelection:{ authenticatorAttachment:"platform", userVerification:"required", residentKey:"discouraged" },
+      timeout:60000, attestation:"none"
+    }});
+    enrollCred = b64(cred.rawId);
+    $("fpState").textContent = "Fingerprint added"; $("fpState").classList.add("ok");
+    refreshSaveBtn();
+    toast("Fingerprint registered.");
+  }catch(e){ toast("Fingerprint not added: " + (e.name==="NotAllowedError" ? "cancelled or timed out." : e.message)); }
+});
+
+$("saveStudent").addEventListener("click", ()=>{
+  const name = $("fName").value.trim(), roll = $("fRoll").value.trim(), cls = $("fClass").value.trim();
+  if(students.some(s=>s.roll===roll && s.cls===cls)){ toast("Roll number already exists in this class."); return; }
+  students.push({ id:"s"+Date.now(), name, roll, cls, descriptors:enrollDescs.slice(), credId:enrollCred, created:new Date().toISOString() });
+  save(); toast(name+" enrolled.");
+  resetEnroll();
+  showTab("students");
+});
+function resetEnroll(){
+  enrollDescs=[]; enrollCred=null;
+  ["fName","fRoll","fClass"].forEach(id=>$(id).value="");
+  $("fpState").textContent="No fingerprint"; $("fpState").classList.remove("ok");
+  renderSamples();
+}
+$("resetEnroll").addEventListener("click", resetEnroll);
+
+/* ---------- matching ---------- */
+function findMatch(descriptor){
+  let best=null, bestD=Infinity;
+  for(const s of students){
+    for(const d of s.descriptors){
+      const dist = faceapi.euclideanDistance(descriptor, d);
+      if(dist<bestD){ bestD=dist; best=s; }
+    }
+  }
+  return (best && bestD<MATCH_THRESHOLD) ? {student:best, dist:bestD} : null;
+}
+
+/* ---------- attendance ---------- */
+function markPresent(student, method){
+  const date = todayStr();
+  if(records.some(r=>r.studentId===student.id && r.date===date)){
+    toast(student.name+" is already marked today."); return false;
+  }
+  records.push({ studentId:student.id, date, time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}), method });
+  save(); renderToday();
+  toast("✓ "+student.name+" marked present ("+method+")");
+  return true;
+}
+function renderToday(){
+  const date = todayStr();
+  const list = records.filter(r=>r.date===date).reverse();
+  $("todayLog").innerHTML = list.length ? list.map(r=>{
+    const s = students.find(x=>x.id===r.studentId);
+    return `<li><span>${esc(s?s.name:"Removed student")}</span><span><span class="tag">${r.method}</span> ${esc(r.time)}</span></li>`;
+  }).join("") : `<li class="empty">Nobody marked yet today.</li>`;
+}
+
+let scanStream=null, scanTimer=null, streaks={}, scanning=false;
+async function scanLoop(){
+  if(!scanning) return;
+  const v = $("vidA");
+  try{
+    const res = await faceapi.detectAllFaces(v, detOpts()).withFaceLandmarks().withFaceDescriptors();
+    const seen = new Set(), items = [];
+    for(const r of res){
+      const m = findMatch(r.descriptor);
+      if(m){
+        seen.add(m.student.id);
+        streaks[m.student.id] = (streaks[m.student.id]||0)+1;
+        const done = records.some(x=>x.studentId===m.student.id && x.date===todayStr());
+        items.push({box:r.detection.box, label:m.student.name+(done?" ✓":""), color:done?"#0E8F63":"#2A4FD6"});
+        if(streaks[m.student.id]===STREAK_NEEDED && !done) markPresent(m.student, "face");
+      }else{
+        items.push({box:r.detection.box, label:"Unknown", color:"#C0392B"});
+      }
+    }
+    Object.keys(streaks).forEach(k=>{ if(!seen.has(k)) streaks[k]=0; });
+    drawBoxes($("ovA"), v, items);
+  }catch(e){}
+  scanTimer = setTimeout(scanLoop, 200);
+}
+$("startScan").addEventListener("click", async ()=>{
+  if(!modelsReady){ toast("Face models not loaded yet."); return; }
+  if(!students.some(s=>s.descriptors.length)){ toast("No enrolled faces yet. Enroll a student first."); return; }
+  scanStream = await startCam($("vidA"), $("offA"));
+  if(scanStream){ scanning=true; streaks={}; $("startScan").classList.add("hidden"); $("stopScan").classList.remove("hidden"); scanLoop(); }
+});
+function stopScan(){
+  scanning=false; clearTimeout(scanTimer);
+  if(scanStream){ stopCam($("vidA"), $("offA"), scanStream); scanStream=null; }
+  $("startScan").classList.remove("hidden"); $("stopScan").classList.add("hidden");
+}
+$("stopScan").addEventListener("click", stopScan);
+
+$("modeSeg").addEventListener("click", e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  document.querySelectorAll("#modeSeg button").forEach(x=>x.classList.toggle("active", x===b));
+  const face = b.dataset.mode==="face";
+  $("faceBox").classList.toggle("hidden", !face);
+  $("fingerBox").classList.toggle("hidden", face);
+  if(!face) stopScan();
+});
+
+$("fpScan").addEventListener("click", async ()=>{
+  const withFp = students.filter(s=>s.credId);
+  if(!withFp.length){ toast("No student has a fingerprint enrolled."); return; }
+  if(!fpSupported()) return;
+  try{
+    const cred = await navigator.credentials.get({publicKey:{
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials: withFp.map(s=>({type:"public-key", id:unb64(s.credId), transports:["internal"]})),
+      userVerification:"required", timeout:60000
+    }});
+    const id = b64(cred.rawId);
+    const s = withFp.find(x=>x.credId===id);
+    if(s) markPresent(s, "fingerprint"); else toast("Fingerprint not recognised.");
+  }catch(e){ toast("Scan failed: " + (e.name==="NotAllowedError" ? "cancelled or timed out." : e.message)); }
+});
+
+/* ---------- students ---------- */
+function renderStudents(){
+  const box = $("studentList");
+  if(!students.length){ box.innerHTML = `<div class="empty">No students yet. Use “Enroll student” to add the first one.</div>`; return; }
+  box.innerHTML = `<table><thead><tr><th>Name</th><th>Roll</th><th>Class</th><th>Face</th><th>Fingerprint</th><th></th></tr></thead><tbody>` +
+    students.map(s=>`<tr>
+      <td>${esc(s.name)}</td><td>${esc(s.roll)}</td><td>${esc(s.cls||"–")}</td>
+      <td>${s.descriptors.length?'<span class="tag ok">Enrolled</span>':'<span class="tag">No</span>'}</td>
+      <td>${s.credId?'<span class="tag ok">Enrolled</span>':'<span class="tag">No</span>'}</td>
+      <td><button class="btn danger" data-del="${s.id}">Delete</button></td></tr>`).join("") + `</tbody></table>`;
+}
+$("studentList").addEventListener("click", e=>{
+  const b = e.target.closest("[data-del]"); if(!b) return;
+  const s = students.find(x=>x.id===b.dataset.del);
+  if(s && confirm("Delete "+s.name+" and their attendance records?")){
+    students = students.filter(x=>x.id!==s.id);
+    records = records.filter(r=>r.studentId!==s.id);
+    save(); renderStudents(); toast("Deleted.");
+  }
+});
+
+/* ---------- records ---------- */
+$("recDate").value = todayStr();
+function recRows(){
+  const date = $("recDate").value, cls = $("recClass").value;
+  return students.filter(s=>!cls || s.cls===cls).map(s=>{
+    const r = records.find(x=>x.studentId===s.id && x.date===date);
+    return { s, r };
+  });
+}
+function renderRecords(){
+  const classes = [...new Set(students.map(s=>s.cls).filter(Boolean))];
+  const cur = $("recClass").value;
+  $("recClass").innerHTML = `<option value="">All classes</option>` + classes.map(c=>`<option ${c===cur?"selected":""}>${esc(c)}</option>`).join("");
+  const rows = recRows();
+  const present = rows.filter(x=>x.r).length;
+  $("recStats").innerHTML = `<div class="stat"><b>${rows.length}</b><span>Students</span></div><div class="stat"><b style="color:var(--ok)">${present}</b><span>Present</span></div><div class="stat"><b style="color:var(--bad)">${rows.length-present}</b><span>Absent</span></div>`;
+  $("recTable").innerHTML = rows.length ? `<table><thead><tr><th>Name</th><th>Roll</th><th>Class</th><th>Status</th><th>Time</th><th>Method</th></tr></thead><tbody>` +
+    rows.map(({s,r})=>`<tr><td>${esc(s.name)}</td><td>${esc(s.roll)}</td><td>${esc(s.cls||"–")}</td>
+      <td>${r?'<span class="tag ok">Present</span>':'<span class="tag bad">Absent</span>'}</td><td>${r?esc(r.time):"–"}</td><td>${r?esc(r.method):"–"}</td></tr>`).join("") + `</tbody></table>`
+    : `<div class="empty">No students to show.</div>`;
+}
+$("recDate").addEventListener("change", renderRecords);
+$("recClass").addEventListener("change", renderRecords);
+$("exportCsv").addEventListener("click", ()=>{
+  const date = $("recDate").value;
+  const q = v => '"'+String(v).replace(/"/g,'""')+'"';
+  const lines = [["Date","Name","Roll","Class","Status","Time","Method"].map(q).join(",")];
+  recRows().forEach(({s,r})=>lines.push([date,s.name,s.roll,s.cls||"",r?"Present":"Absent",r?r.time:"",r?r.method:""].map(q).join(",")));
+  const blob = new Blob([lines.join("\n")], {type:"text/csv"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "attendance-"+date+".csv"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+});
+
+/* ---------- init ---------- */
+renderToday();
+loadModels();
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+</script>
+</body>
+</html>
